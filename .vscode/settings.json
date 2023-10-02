@@ -1,0 +1,12 @@
+{
+	"java.project.sourcePaths": [
+		"src"
+	],
+	"java.project.outputPath": "bin",
+	"java.project.referencedLibraries": [
+		"lib/**/*.jar"
+	],
+	// "java.debug.settings.vmArgs": "-Dsun.java2d.uiScale=2 -Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel"
+	"java.debug.settings.vmArgs": "-Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel"
+	// "java.debug.settings.vmArgs": "-Dsun.java2d.uiScale=2 -Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel"
+}
