@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -18,11 +17,15 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import domain.Player;
 
 class SettingsWindow extends JFrame {
+
+	private static final int FIELD_DIM_DEFAULT = 3;
+	private static final int FIELD_DIM_MAX = 10;
+	private static final int MODE_DEFAULT = 0;
+	private static final Player HUMAN_PLAYER_DEFAULT = Player.X;
 
 	private static final String TITLE_STR = "Новая игра";
 	private static final String MODE_STR = "Выберите режим игры:";
@@ -41,10 +44,10 @@ class SettingsWindow extends JFrame {
 	private static final int PADDING = 10;
 	private static final Dimension PADDING_DIM = new Dimension(PADDING, PADDING);
 
-	private int mode = 0;
-	private Player humanPlayer = Player.X;
-	private int fieldDimension = 3;
-	private int winLength = 3;
+	private int mode = MODE_DEFAULT;
+	private Player humanPlayer = HUMAN_PLAYER_DEFAULT;
+	private int fieldDimension = FIELD_DIM_DEFAULT;
+	private int winLength = FIELD_DIM_DEFAULT;
 
 	// controls
 
@@ -57,18 +60,20 @@ class SettingsWindow extends JFrame {
 	private final JRadioButton radioHumanVsHuman = new JRadioButton(HUMAN_VS_HUMAN_STR);
 	private final JRadioButton radioX = new JRadioButton(X_STR);
 	private final JRadioButton radioO = new JRadioButton(O_STR);
-	private final JSlider sliderDim = new JSlider(3, 10);
-	private final JSlider sliderWinLen = new JSlider(3, 10);
+	private final JSlider sliderDim = new JSlider(FIELD_DIM_DEFAULT, FIELD_DIM_MAX);
+	private final JSlider sliderWinLen = new JSlider(FIELD_DIM_DEFAULT, FIELD_DIM_DEFAULT);
 	private final JButton buttonStart = new JButton(START_STR);
+
+	private final GameWindow gameWindow;
 
 	SettingsWindow(GameWindow gameWindow) {
 
 		super(TITLE_STR);
+		this.gameWindow = gameWindow;
 		setMinimumSize(new Dimension(WIDTH, HEIGHT));
 		setLocationRelativeTo(gameWindow);
 
 		initControls();
-		actualizeLabels();
 
 		var frameContainer = new JPanel();
 		frameContainer.setLayout(new BoxLayout(frameContainer, BoxLayout.PAGE_AXIS));
@@ -117,37 +122,12 @@ class SettingsWindow extends JFrame {
 		frameContainer.add(buttonStart);
 		super.pack();
 
-		buttonStart.addActionListener(new ActionListener() {
+		buttonStart.addActionListener(this::handleButtonStartPressed);
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (mode != 0) {
-					try {
-						JOptionPane.showMessageDialog(SettingsWindow.this, UNSUPPORTED_STR);
-					} catch (HeadlessException ex) {
-						ex.printStackTrace();
-					}
-					return;
-				}
-				setVisible(false);
-				gameWindow.startNewGame(mode, humanPlayer, fieldDimension, fieldDimension, winLength);
-				// gameWindow.requestFocus();
-			}
-		});
-
-		var changeListener = new ChangeListener() {
-
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				actualizeValues();
-				actualizeLabels();
-			}
-		};
-
-		radioHumanVsAi.addChangeListener(changeListener);
-		radioX.addChangeListener(changeListener);
-		sliderDim.addChangeListener(changeListener);
-		sliderWinLen.addChangeListener(changeListener);
+		radioHumanVsAi.addChangeListener(this::handleAControlStateChanged);
+		radioX.addChangeListener(this::handleAControlStateChanged);
+		sliderDim.addChangeListener(this::handleAControlStateChanged);
+		sliderWinLen.addChangeListener(this::handleAControlStateChanged);
 	}
 
 	private void initControls() {
@@ -155,6 +135,8 @@ class SettingsWindow extends JFrame {
 		radioX.setSelected(humanPlayer == Player.X);
 		sliderDim.setValue(fieldDimension);
 		sliderWinLen.setValue(winLength);
+		actualizeLabels();
+		actualizeSliders();
 	}
 
 	private void actualizeValues() {
@@ -168,5 +150,38 @@ class SettingsWindow extends JFrame {
 		labelDim.setText(String.format(DIM_FSTR, fieldDimension));
 		labelWinLen.setText(String.format(WINLEN_FSTR, winLength));
 		repaint();
+	}
+
+	private void actualizeSliders() {
+		var dimValue = sliderDim.getValue();
+		if (sliderWinLen.getValue() > dimValue) {
+			sliderWinLen.setValue(dimValue);
+		}
+		sliderWinLen.setMaximum(dimValue);
+		sliderWinLen.setEnabled(sliderWinLen.getMinimum() != sliderWinLen.getMaximum());
+	}
+
+	private void handleButtonStartPressed(ActionEvent e) {
+		if (mode != 0) {
+			try {
+				JOptionPane.showMessageDialog(SettingsWindow.this, UNSUPPORTED_STR);
+			} catch (HeadlessException ex) {
+				ex.printStackTrace();
+			}
+			return;
+		}
+		setVisible(false);
+		gameWindow.startNewGame(mode, humanPlayer, fieldDimension, fieldDimension, winLength);
+		// gameWindow.requestFocus();
+	}
+
+	public void handleAControlStateChanged(ChangeEvent e) {
+		actualizeValues();
+		if (e.getSource() instanceof JSlider slider) {
+			actualizeLabels();
+			if (slider == sliderDim) {
+				actualizeSliders();
+			}
+		}
 	}
 }
